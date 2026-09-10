@@ -187,7 +187,7 @@ def update_user(user_id: int, user_update:UserUpdate, db: Annotated[session, Dep
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
 
-    if user_update.username is not None and user_update.username != user.user_id:
+    if user_update.username is not None and user_update.username != user.username:
         result = db.execute(select(model.User).where(model.User.id == user_update.user_id))
         user = result.scalars().first()
         if not user:
