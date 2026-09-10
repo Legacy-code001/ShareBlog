@@ -11,7 +11,7 @@ engine = create_engine(
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
-
+#DeclarativeBase acts as the foundation for your Object-Relational Mapping (ORM) models.
 class Base(DeclarativeBase):
     pass
 

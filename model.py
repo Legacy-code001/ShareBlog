@@ -22,6 +22,8 @@ class User(Base):
 
     posts: Mapped[list[Post]] = relationship(back_populates="author", cascade="all, delete-orphan")
 
+
+    #he @property decorator turns the image_path method into a read-only attribute,
     @property
     def image_path(self) -> str:
         if self.image_file:

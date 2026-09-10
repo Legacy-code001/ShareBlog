@@ -12,6 +12,7 @@ from typing import Annotated
 import model
 from database import Base, engine, get_db
 
+# Creates every table registered under this specific Base
 Base.metadata.create_all(bind=engine) 
 
 app = FastAPI()
@@ -37,6 +38,8 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 #         "date_posted": "April 21, 2026",
 #     },
 # ]
+
+
 
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
