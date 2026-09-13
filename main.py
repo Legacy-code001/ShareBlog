@@ -9,10 +9,13 @@ from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 from schemas import PostCreate, PostResponse, UserResponse, UserCreate, PostCreate, PostUpdate, UserUpdate
 from sqlalchemy import select
-from sqlalchemy.orm import session
+from sqlalchemy.orm import selectinload
+from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 import model
 from database import Base, engine, get_db
+
+
 
 # Creates every table registered under this specific Base
 @asynccontextmanager
@@ -29,6 +32,9 @@ templates = Jinja2Templates(directory="templates")
 
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory="media"), name="media")
+
+app.router(users.router, prefix="app/users", tag=["users"])
+app.router(posts.router, prefix="app/posts", tag=["posts"])
 
 
 # posts: list[dict] = [
@@ -52,7 +58,7 @@ app.mount("/media", StaticFiles(directory="media"), name="media")
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.Post).options(model.Post.author))
+    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)))
     posts = result.scalars().all()
     return templates.TemplateResponse(
         request,
@@ -92,254 +98,7 @@ async def user_posts_page(request: Request, user_id: int, db: Annotated[AsyncSes
         "user_posts.html",
         {"posts": posts, "user": user, "title": f"{user.username}'s Posts"},
     )
-
-
-@app.post(
-    "/api/users",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_user(user: UserCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(
-        select(model.User).where(model.User.username == user.username),
-    )
-
-    existing_user = result.scalars().first()
-    if existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="user already exit",
-        )
-    
-    
-    result = await db.execute(
-        select(model.User).where(model.User.email == user.email)
-    )
-
-    existing_email = result.scalars().first()
-    if existing_email:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-             detail="email already exit",
-        )
-    
-    new_user = model.User(
-        username=user.username,
-        email=user.email
-    )
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
-
-
-@app.get(
-    "/api/users/{user.id}",
-    response_model=UserResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(
-        select(model.User).where(model.User.id == user_id)
-    )
-
-    user = result.scalars().first()
-    if user:
-        return user
-    raise HTTPException(
-            status_code=status.HTTP_404_BAD_NOT_FOUND,
-            detail="user not found",
-    )
-
-@app.delete(
-    "/api/users/{user.id}",
-    status_code=status.HTTP_204_NO_CONTENT
-)
-async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)] ):
-    result = await db.execute(
-        select(model.User).where(model.User.id == user_id)
-    )
-
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_BAD_NOT_FOUND,
-            detail="user not found",
-        )
-        
-    db.delete(user)
-    db.commit()
-
-
-
-@app.get("/api/users/{user_id}/posts", response_model=list[PostResponse])
-async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.User).where(model.User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found",
-        )
-    result =await db.execute(select(model.Post).where(model.Post.user_id == user_id))
-    posts = result.scalars().all()
-    return posts
-
-
-@app.patch("/api/users/{user_id}", response_model=PostResponse)
-async def update_user(user_id: int, user_update:UserUpdate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.User).where(model.User.id == user_id))
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="user not found")
-
-    if user_update.username is not None and user_update.username != user.username:
-        result = await db.execute(select(model.User).where(model.User.id == user_update.user_id))
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="username already exist",
-        )
-
-    if user_update.email is not None and user_update.email != user.email:
-        result = await db.execute(select(model.User).where(model.User.email == user_update.email))
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="email already exist",
-        )
-
-    if user_update.username is not None:
-        user.username = user_update.username
-    if user_update.email is not None:
-        user.email = user_update.email
-    if user_update.image_path is not None:
-        user.image_path = user_update.image_path
-    
-    db.commit()
-    db.refresh(user)
-    return user
-
-
-@app.delete(
-    "/api/users/{user.id}",
-    status_code=status.HTTP_204_NO_CONTENT
-)
-async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(
-        select(model.User).where(model.User.id == user_id)
-    )
-
-    user = result.scalars().first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_BAD_NOT_FOUND,
-            detail="user not found",
-        )
-        
-    db.delete(user)
-    db.commit()
-
-
-@app.get("/api/posts", response_model=list[PostResponse])
-async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)))
-    posts = result.scalars().all()
-    return posts
-
-
-@app.post(
-    "/api/posts",
-    response_model=PostResponse,
-    status_code=status.HTTP_201_CREATED,
-)
-async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result =await db.execute(
-        select(model.User).where(model.User.id == post.user_id)
-    )
-
-    existing_user = result.scalars().first()
-    if not existing_user:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="user not found",
-        )
-
-    new_post = model.Post(
-        title=post.title,
-        content=post.content,
-        user_id=post.user_id,
-    )
-    db.add(new_post)
-    db.commit()
-    db.refresh(new_post)
-    return new_post
-
-@app.get("/api/posts/{post_id}", response_model=PostResponse)
-async def get_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result =await db.execute(select(model.Post).options(selectinload(model.Post.author)).where(model.Post.id == post_id))
-    post = result.scalars().first()
-    if post:
-        return post
-    raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-
-#on this
-@app.put("/api/posts/{post_id}", response_model=PostResponse)
-async def update_posts(post_id: int, post_data:PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result =await  db.execute(select(model.Post).where(model.Post.id == post_id))
-    post = result.scalars().first()
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-
-    if post_data.user_id != post.user_id:
-        result = db.execute(select(model.Post).where(model.User.id == post_data.user_id))
-        user = result.scalars().first()
-        if not user:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail="user not found",
-        )
-    
-
-    post.title = post_data.title
-    post.content = post_data.content
-    post.user_id = post_data.user_id
-
-    db.commit()
-    db.refresh(post)
-    return post
-
-
-@app.patch("/api/posts/{post_id}", response_model=PostResponse)
-async def update_posts_partial(post_id: int, post_data:PostUpdate, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.Post).where(model.Post.id == post_id))
-    post = result.scalars().first()
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-
-    update_data = post_data.model_dump(exclude_unset=True)
-    for key, val in update_data.items():
-        setattr(post, key, val)
-    
-    db.commit()
-    db.refresh(post)
-    return post
-
-@app.delete("/api/posts/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
-async def delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(select(model.Post).where(model.Post.id == post_id))
-    post = result.scalars().first()
-    if not post:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
-    
-    db.delete(post)
-    db.commit()
-
-
-
-
+   
 
 
 ## StarletteHTTPException Handler
