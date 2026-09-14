@@ -1,6 +1,6 @@
 from fastapi import FastAPI, Request, HTTPException, status, Depends
-from contexlib import asynccontextmanager
-from fastapi.exception_handler import request_validation_exception_handler
+from contextlib import asynccontextmanager
+from fastapi.exception_handlers import http_exception_handler, request_validation_exception_handler
 from fastapi.responses import HTMLResponse
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -13,15 +13,16 @@ from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 import model
+from routers import posts, users
 from database import Base, engine, get_db
 
 
 
 # Creates every table registered under this specific Base
 @asynccontextmanager
-async def lifespan(_app, FastAPI):
+async def lifespan(_app: FastAPI):
     async with engine.begin() as conn:
-        conn.run.sync(Base.metadata.create_all)
+        conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -33,8 +34,8 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-app.router(users.router, prefix="app/users", tag=["users"])
-app.router(posts.router, prefix="app/posts", tag=["posts"])
+app.include_router(users.router, prefix="/app/users", tags=["users"])
+app.include_router(posts.router, prefix="/app/posts", tags=["posts"])
 
 
 # posts: list[dict] = [
@@ -46,7 +47,7 @@ app.router(posts.router, prefix="app/posts", tag=["posts"])
 #         "date_posted": "April 20, 2026",
 #     },
 #     {
-#         "id": 2,
+#         "id": 2, 
 #         "author": "Taiwo Raheem",
 #         "title": "Python is Great for Web Development",
 #         "content": "Python is a great language for web development, and FastAPI makes it even better.",
@@ -103,18 +104,23 @@ async def user_posts_page(request: Request, user_id: int, db: Annotated[AsyncSes
 
 ## StarletteHTTPException Handler
 @app.exception_handler(StarletteHttpException)
-def general_http_exception_handler(request: Request, exception: StarletteHttpException):
+async def general_http_exception_handler(request: Request, exception: StarletteHttpException):
+    
+
+    if request.url.path.startswith("/api"):
+        return await http_exception_handler(request, exception)
+        
+        # JSONResponse(
+        #     status_code = exception.status_code,
+        #     content = {"detail": message}
+        # )
+
     message = (
         exception.detail
         if exception.detail
         else "An erroe occur, please check your request and try again"
     )
 
-    if request.url.path.startswith("/api"):
-        return JSONResponse(
-            status_code = exception.status_code,
-            content = {"detail": message}
-        )
     return templates.TemplateResponse(
                 request,
                 "error.html",
@@ -128,9 +134,11 @@ def general_http_exception_handler(request: Request, exception: StarletteHttpExc
     
 ## RequestValidationError Handler
 @app.exception_handler(RequestValidationError)
-def validation_exception_handler(request: Request, exception:RequestValidationError):
+async def validation_exception_handler(request: Request, exception:RequestValidationError):
     if request.url.path.startswith("/api"):
-        return JSONResponse(
+        return await request_validation_exception_handler(request, exception)
+        
+        JSONResponse(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
             content = {"detail": exception.errors()}
         )

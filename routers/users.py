@@ -1,12 +1,12 @@
-from fastapi import FastAPI, Request, HTTPException, status, Depends
+from fastapi import FastAPI, Request, HTTPException, status, Depends, APIRouter
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
-from sqlalchemy.ext.asyncio import 
-from schemas import UserResponse, UserCreate, UserUpdate
+from sqlalchemy.ext.asyncio import AsyncSession
+from schemas import UserResponse, UserCreate, UserUpdate, PostResponse
 import model
 from database import Base, engine, get_db
-route = APIRoute()
+router = APIRouter()
 
 @router.post(
     "",
@@ -61,7 +61,7 @@ async def get_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
     if user:
         return user
     raise HTTPException(
-            status_code=status.HTTP_404_BAD_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="user not found",
     )
 
@@ -76,7 +76,7 @@ async def get_user_posts(user_id: int, db: Annotated[AsyncSession, Depends(get_d
         )
     result =await db.execute(
     select(model.Post)
-    .options(selectinload(models.Post.author))
+    .options(selectinload(model.Post.author))
     .where(model.Post.user_id == user_id)
     )
     posts = result.scalars().all()
@@ -132,7 +132,7 @@ async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]
     user = result.scalars().first()
     if not user:
         raise HTTPException(
-            status_code=status.HTTP_404_BAD_NOT_FOUND,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="user not found",
         )
         

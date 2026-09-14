@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, status, Depends, APIRoute
+from fastapi import FastAPI, Request, HTTPException, status, Depends, APIRouter
 from typing import Annotated
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
@@ -7,7 +7,7 @@ from schemas import PostCreate, PostResponse, PostUpdate
 import model
 from database import Base, engine, get_db
 
-router = APIRoute()
+router = APIRouter()
 
 @router.get("", response_model=list[PostResponse])
 async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
@@ -15,9 +15,9 @@ async def get_posts(db: Annotated[AsyncSession, Depends(get_db)]):
     posts = result.scalars().all()
     return posts
 
-@app.post(
-    "/api/users",
-    response_model=UserResponse,
+@router.post(
+    "",
+    response_model=PostResponse,
     status_code=status.HTTP_201_CREATED,
 )
 async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_db)]):
@@ -39,7 +39,7 @@ async def create_post(post: PostCreate, db: Annotated[AsyncSession, Depends(get_
     )
     db.add(new_post)
     await db.commit()
-    await db.refresh(new_post, attribute-name=["authour"])
+    await db.refresh(new_post, attribute_names=["author"])
     return new_post
 
 
@@ -73,7 +73,7 @@ async def update_posts(post_id: int, post_data:PostCreate, db: Annotated[AsyncSe
     post.user_id = post_data.user_id
 
     await db.commit()
-    await db.refresh(post, attribute-name=["author"])
+    await db.refresh(post, attribute_name=["author"])
     return post
 
 @router.patch("/{post_id}", response_model=PostResponse)
@@ -88,12 +88,12 @@ async def update_posts_partial(post_id: int, post_data:PostUpdate, db: Annotated
         setattr(post, key, val)
     
     await db.commit()
-    await db.refresh(post, attribute-namw{"author "})
+    await db.refresh(post, attribute_names=["author"])
     return post
 
 @router.delete("/{post_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_post(post_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = db.execute(select(model.Post).where(model.Post.id == post_id))
+    result = await db.execute(select(model.Post).where(model.Post.id == post_id))
     post = result.scalars().first()
     if not post:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Post not found")
