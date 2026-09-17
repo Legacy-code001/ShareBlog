@@ -22,7 +22,7 @@ from database import Base, engine, get_db
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
     async with engine.begin() as conn:
-        conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)
     yield
     await engine.dispose()
 
@@ -34,8 +34,8 @@ templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 app.mount("/media", StaticFiles(directory="media"), name="media")
 
-app.include_router(users.router, prefix="/app/users", tags=["users"])
-app.include_router(posts.router, prefix="/app/posts", tags=["posts"])
+app.include_router(users.router, prefix="/api/users", tags=["users"])
+app.include_router(posts.router, prefix="/api/posts", tags=["posts"])
 
 
 # posts: list[dict] = [
@@ -59,7 +59,7 @@ app.include_router(posts.router, prefix="/app/posts", tags=["posts"])
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)))
+    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)).order_by(model.Post.date_posted.desc()))
     posts = result.scalars().all()
     return templates.TemplateResponse(
         request,
@@ -85,7 +85,7 @@ async def post_page(request: Request, post_id: int, db: Annotated[AsyncSession, 
 
 @app.get("/users/{user_id}/posts", include_in_schema=False, name="user_posts")
 async def user_posts_page(request: Request, user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.User).where(model.User.id == user_id))
+    result = await db.execute(select(model.User).where(model.User.id == user_id).order_by(model.Post.date_posted.desc()))
     user = result.scalars().first()
     if not user:
         raise HTTPException(
