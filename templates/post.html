@@ -16,7 +16,7 @@
         <h2 class="article-title">{{ post.title }}</h2>
         <p class="article-content">{{ post.content }}</p>
         <!-- Only show edit/delete options if user_id is 1 (TEMPORARY - until authentication) -->
-        {% if post.user_id == 1 %}
+        {% if post.user_id == 2 %}
             <div class="post-actions mt-3 pt-3 border-top">
                 <button type="button"
                         class="btn btn-outline-secondary me-1"
@@ -108,3 +108,96 @@
     </div>
 {% endblock content %}
 {% block scripts %}
+<script type="module">
+    import {
+        getErrorMessage,
+        hideModal,
+        showModal,
+    } from "/static/js/utils.js"
+
+    // Get post ID from Jinja2 template
+    const postId = {{ post.id }};
+
+    // Edit Post Form Handler
+    const editForm = document.getElementById("editPostForm");
+    editForm.addEventListener("submit", async (event) => {
+      // Stop default form submission - we'll handle it with JavaScript
+      event.preventDefault();
+
+      // Gather form values into a plain object
+      const formData = new FormData(editForm);
+      const postData = Object.fromEntries(formData.entries());
+
+      // Remove post_id from data (it's in the URL, not the body)
+      delete postData.post_id;
+
+      try {
+        // PATCH for partial update (just title and content, not user_id)
+        const response = await fetch(`/api/posts/${postId}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(postData),
+        });
+
+        if (response.ok) {
+          document.getElementById("successMessage").textContent =
+            "Post updated successfully!";
+
+          hideModal("editModal");
+          showModal("successModal");
+
+          document
+            .getElementById("successModal")
+            .addEventListener(
+              "hidden.bs.modal",
+              () => {
+                window.location.reload();
+              },
+              { once: true },
+            );
+        } else {
+          const error = await response.json();
+          document.getElementById("errorMessage").textContent =
+            getErrorMessage(error);
+
+          hideModal("editModal");
+          showModal("errorModal");
+        }
+      } catch (error) {
+        document.getElementById("errorMessage").textContent =
+          "Network error. Please check your connection and try again.";
+        showModal("errorModal");
+      }
+    });
+
+     // Delete Post Handler - listen for click on delete button
+    const deleteButton = document.getElementById("confirmDelete");
+    deleteButton.addEventListener("click", async () => {
+      try {
+        // DELETE request - no body needed, post_id is in the URL
+        const response = await fetch(`/api/posts/${postId}`, {
+          method: "DELETE",
+        });
+
+        // 204 = No Content (success)
+        if (response.status === 204) {
+          // Post is gone, redirect to home page
+          window.location.href = "/";
+        } else {
+          const error = await response.json();
+          document.getElementById("errorMessage").textContent =
+            getErrorMessage(error);
+
+          hideModal("deleteModal");
+          showModal("errorModal");
+        }
+      } catch (error) {
+        document.getElementById("errorMessage").textContent =
+          "Network error. Please check your connection and try again.";
+        showModal("errorModal");
+      }
+    });
+</script>
+{% endblock scripts %}
