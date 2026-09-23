@@ -8,14 +8,14 @@ class UserBase(BaseModel):
 
 
 class UserCreate(UserBase): 
-    passsword: str = Field(min_length=8)
+    password: str = Field(min_length=8)
 
 class UserPublic(BaseModel): 
     #tells Pydantic v2 to read data from standard class objects and database rows using their attributes instead of dictionaries
     model_config = ConfigDict(from_attributes=True)
 
     id: int
-    username; str
+    username: str
     image_file: str | None
     image_path: str
 

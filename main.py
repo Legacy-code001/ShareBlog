@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse
 from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
-from schemas import PostCreate, PostResponse, UserResponse, UserCreate, PostCreate, PostUpdate, UserUpdate
+from schemas import PostCreate, PostResponse, UserCreate, PostCreate, PostUpdate, UserUpdate
 from sqlalchemy import select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
