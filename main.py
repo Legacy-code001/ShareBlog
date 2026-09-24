@@ -56,6 +56,7 @@ app.include_router(posts.router, prefix="/api/posts", tags=["posts"])
 # ]
 
 
+
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
@@ -99,7 +100,26 @@ async def user_posts_page(request: Request, user_id: int, db: Annotated[AsyncSes
         "user_posts.html",
         {"posts": posts, "user": user, "title": f"{user.username}'s Posts"},
     )
+
+
+
+@app.get("/login", include_in_schema=False)
+async def login_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "login.html",
+        {"title": "Login"}
+
+    )
    
+@app.get("/register", include_in_schema=False)
+async def register_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "register.html",
+        {"title": "Register"}
+
+    )
 
 
 ## StarletteHTTPException Handler
