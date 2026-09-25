@@ -51,37 +51,37 @@
         const registerForm = document.getElementById("registerForm")
         const passwordInput = document.getElementById("password")
         const confirmPasswordInput = document.getElementById("confirmPassword")
-        const passwordError = documnet.getElementById("passwordError")
+        const passwordError = document.getElementById("passwordError")
 
         // Check passwords match on input
         confirmPasswordInput.addEventListener('input', ()=> {
-            if (passwordError.value !== confirmPasswordInput.value){
+            if (passwordInput.value.trim() !== confirmPasswordInput.value.trim()){
                 passwordError.classList.remove('d-none')
-                confirmPasswordInput.setCustomVadility('password do not match')
+                confirmPasswordInput.setCustomValidity('password do not match')
             }else{
                 passwordError.classList.add('d-none')
-                confirmPasswordInput.setCustomVadility('')
+                confirmPasswordInput.setCustomValidity('')
             }
         });
 
         registerForm.addEventListener("submit", async (event)=> {
             event.preventDefault()
 
-            if (passwordError.value !== confirmPasswordInput.value){
+            if (passwordInput.value.trim() !== confirmPasswordInput.value.trim()) {
                 passwordError.classList.remove('d-none');
-                return
-
+                return;
             }
+            
             
             const formData = new FormData(registerForm)
             const userData = {
-                username: formData.get(username),
-                email: formData.get(email),
-                password: formData.get(password)
+                username: formData.get("username"),
+                email: formData.get("email"),
+                password: formData.get("password")
             }
 
             try {
-                const response = await fetch ("/api/users", {
+                const response = await fetch("/api/users", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json"
@@ -98,14 +98,15 @@
                         window.location.href = '/login';
                     }, { once: true });
                 }else{
-                    documnet.getElementById("errorMessage").textContent = getErrorMessage(error);
+                    const error = await response.json()
+                    document.getElementById("errorMessage").textContent = getErrorMessage(error);
                     showModal("errorModal");
                 }
             } catch (error) {
                 document.getElementById('errorMessage').textContent =
                 'Network error. Please check your connection and try again.';
                 showModal('errorModal');
-        }
+            }
         })
     </script>
 {% endblock scripts %}

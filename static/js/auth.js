@@ -1,3 +1,5 @@
+
+//to avoid redundant api calls (catching )
 let currentUser = null;
 let fetchPromise = null;
 
@@ -18,6 +20,7 @@ export async function getCurrentUser() {
 
   fetchPromise = (async () => {
     try {
+      //validate the token is still good and also get current user details
       const response = await fetch("/api/users/me", {
         headers: {
           Authorization: `Bearer ${token}`,

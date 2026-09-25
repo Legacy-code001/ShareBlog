@@ -26,44 +26,81 @@
     <script type="module">
         import {getErrorMessage, showModal} from "/static/js/utils.js"
 
-        const login_form = getElementById("loginForm")
-        loginForm.addEventListener("submit", async (event) => {
+        const login_form = document.getElementById("loginForm")
+
+        login_form.addEventListener("submit", async (event) => {
             event.preventDefault();
-        })
+            
+            const formData = new FormData(login_form)
+            try {
+              const response = await fetch('/api/users/token', {
+                method: 'POST',
+                body: formData,
+              });
 
-        const formData = new FormData(loginForm)
+              // const successModalEl = document.getElementById('successModal');
 
-        try{
-            // OAuth2PasswordRequestForm expects form data, not JSON
-            const response = await fetech ("api/users/token", {
-            Method: 'POST',
-            body: formData,
-        });
+              // if (successModalEl) {
+              //   successModalEl.addEventListener('hidden.bs.modal', () => {
+              //     // replace() guarantees the redirect goes through and resets browser session state
+              //     window.location.replace("/"); 
+              //   });
+              // }
 
-        if (response.ok){
-            const data = await response.json();
+              if (response.ok){
+                const data = await response.json();
 
-             // Store token in localStorage
-            localStorage.setItem("access_token", data.access_token);
+                // Store token in localStorage
+                localStorage.setItem("access_token", data.access_token);
 
-            // Show success modal and redirect to home
-            document.getElementById("successMessage").textContent = "Login Successful"
+                // Show success modal and redirect to home
+                document.getElementById("successMessage").textContent = "Login Successful"
+                showModal("successModal")
 
-            showModal("successModal")
+                document.getElementById('successModal').addEventListener('hidden.bs.modal', () => {
+                  window.location.href = "/";
+                }, { once: true });
 
-            document.getElementById("successModal").addEventListener('hidden.bs.modal', ()=>{
-              window.location.href('/')
-        }, {once: true})
-        }else {
-            document.getElementById("errorMessage").textContent = getErrorMessage(error)
-            showModal("errorModal")
-        }
+              }else {
+                document.getElementById("errorMessage").textContent = getErrorMessage(error)
+                showModal("errorModal")
+              }
+            }catch(error){
+              document.getElementById("errorMessage").textContent = "Network error. Please check your connection and try again."
+              showModal("errorModal")
+            }
+          })
+        // try{
+        //     // OAuth2PasswordRequestForm expects form data, not JSON
+        //     const response = await fetech("api/users/token", {
+        //     Method: 'POST',
+        //     body: formData,
+        // });
+
+        // if (response.ok){
+        //     const data = await response.json();
+
+        //      // Store token in localStorage
+        //     localStorage.setItem("access_token", data.access_token);
+
+        //     // Show success modal and redirect to home
+        //     document.getElementById("successMessage").textContent = "Login Successful"
+
+        //     showModal("successModal")
+
+        //     document.getElementById("successModal").addEventListener('hidden.bs.modal', ()=>{
+        //       window.location.href('/')
+        // }, {once: true})
+        // }else {
+        //     document.getElementById("errorMessage").textContent = getErrorMessage(error)
+        //     showModal("errorModal")
+        // }
 
 
-        }catch(error){
-            document.getElementById("errorMessage").textContent = "Network error. Please check your connection and try again."
-            showModal("errorModal")
-        }
+        // }catch(error){
+        //     document.getElementById("errorMessage").textContent = "Network error. Please check your connection and try again."
+        //     showModal("errorModal")
+        // }
         
     </script>
     <!-- <script type="module">
