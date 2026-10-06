@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request, HTTPException, status, Depends, APIRouter
+from fastapi import FastAPI, Request, HTTPException, status, Depends, APIRouter, UploadFile
 from typing import Annotated
 from sqlalchemy import select
 from datetime import timedelta
@@ -6,7 +6,10 @@ from auth import create_access_token,hash_password, oauth2_scheme, verify_passwo
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import selectinload
 from config import settings
+from image_utils import process_profile_image, delte_profile_image
 from sqlalchemy import func
+from starllet.concurrency import run_in_threadpool
+from PIL import UnidentifiedImageError
 from sqlalchemy.ext.asyncio import AsyncSession
 from schemas import UserCreate, UserPrivate, UserPublic, PostResponse, Token, UserUpdate
 import model
@@ -158,9 +161,9 @@ async def update_user(user_id: int, user_update:UserUpdate, current_user: Curren
     if user_update.username is not None:
         user.username = user_update.username
     if user_update.email is not None:
-        user.email.lower = user_update.email.lower()
-    if user_update.image_path is not None:
-        user.image_path = user_update.image_path
+        user.email = user_update.email.lower()
+    # if user_update.image_path is not None:
+    #     user.image_path = user_update.image_path
     
     await db.commit()
     await db.refresh(user)
@@ -171,7 +174,7 @@ async def update_user(user_id: int, user_update:UserUpdate, current_user: Curren
     "/{user_id}",
     status_code=status.HTTP_204_NO_CONTENT
 )
-async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]):
+async def delete_user(user_id: int, current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
     if user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -191,3 +194,10 @@ async def delete_user(user_id: int, db: Annotated[AsyncSession, Depends(get_db)]
     await db.delete(user)
     await db.commit()
 
+@router.patch("/{user_id}/picture", response_model: UserPrivate)
+async def upload_profile_picture(user_id: int, current_user: CurrentUser, file: UploadFile, Annotated[AsyncSession, Depends(get_db)]):
+    if current_user.id ! user_id:
+        raise HTTPException(
+            status=HTTP_403_FORBIDDEN,
+            detail=""
+        )

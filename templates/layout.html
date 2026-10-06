@@ -279,11 +279,13 @@
             const accountBtn = document.getElementById('accountBtn');
 
             if (user) {
+                console.log("sucess")
                 loggedInNav.classList.remove('d-none');
                 loggedInNav.classList.add('d-flex');
                 loggedOutNav.classList.add('d-none');
                 accountBtn.textContent = user.username;
             } else {
+                console.log(failed)
                 loggedInNav.classList.add('d-none');
                 loggedInNav.classList.remove('d-flex');
                 loggedOutNav.classList.remove('d-none');

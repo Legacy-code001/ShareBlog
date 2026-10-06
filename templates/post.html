@@ -15,17 +15,15 @@
         </div>
         <h2 class="article-title">{{ post.title }}</h2>
         <p class="article-content">{{ post.content }}</p>
-        <!-- Only show edit/delete options if user_id is 1 (TEMPORARY - until authentication) -->
-
         <div id="postActions" class="post-actions mt-3 pt-3 border-top d-none">
             <button type="button"
-                    class="btn btn-outline-secondary me-1"
-                    data-bs-toggle="modal"
-                    data-bs-target="#editModal">Edit Post</button>
+                class="btn btn-outline-secondary me-1"
+                data-bs-toggle="modal"
+                data-bs-target="#editModal">Edit Post</button>
             <button type="button"
-                    class="btn btn-outline-danger"
-                    data-bs-toggle="modal"
-                    data-bs-target="#deleteModal">Delete Post</button>
+                class="btn btn-outline-danger"
+                data-bs-toggle="modal"
+                data-bs-target="#deleteModal">Delete Post</button>
         </div>
 
       </div>

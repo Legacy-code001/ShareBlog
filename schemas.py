@@ -20,7 +20,7 @@ class UserPublic(BaseModel):
     image_path: str
 
 
-class UserPrivate(BaseModel): 
+class UserPrivate(UserPublic): 
     #tells Pydantic v2 to read data from standard class objects and database rows using their attributes instead of dictionaries
     email: EmailStr
 
