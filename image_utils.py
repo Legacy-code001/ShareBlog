@@ -1,34 +1,33 @@
 import uuid
-from io import BytesIo
-from PIL import image, imageOps
-from pathlib import path
+from io import BytesIO
+from PIL import Image, ImageOps
+from pathlib import Path
 
-PROFILE_PICS_DIR = path("media/profile-pics")
+PROFILE_PICS_DIR = Path("media/profile-pics")
 
 
 ## Process Image Function
 
-def process_profile_image(content: byte) -> :
-    with Image.open(BytesIo(content)) as original
+def process_profile_image(content: bytes) -> str:
+    with Image.open(BytesIO(content)) as original:
+        img = ImageOps.exif_transpose(original)
+        
+        img = ImageOps.fit(img, (300,300), method=Image.Resampling.LANCZOS)
 
-    img = imageOps.exif_transpose(original)
+        if img.mode in ("RGBA", "LA", "P"):
+            img = img.convert("RGB")
 
-    img = imageOps.fit(img, (300,300), method=Image.Resampling.LANCZOS)
+        filename = f"{uuid.uuid4().hex}.jpg"
+        filepath = PROFILE_PICS_DIR/filename
 
-    if imag.mode in ("RGBA", "LA", "P"):
-        img = img.convert("RGB")
+        PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
 
-    filename = f"{uuid.uuid4().hex}.jpg"
-    filepath = PROFILE_PICS_DIR/filename
+        img.save(filepath, "JPEG", quality=85, optimize=True)
 
-    PROFILE_PICS_DIR.mkdir(parents=True, exist_ok=True)
-
-    img.save(filepath, "JPEG", quality=85, optimize=True)
-
-return filename
+    return filename
 
 
-def delte_profile_image(filename: str | None) -> None:
+def delete_profile_image(filename: str | None) -> None:
     if filename is None:
         return
 
