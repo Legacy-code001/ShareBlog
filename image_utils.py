@@ -3,7 +3,7 @@ from io import BytesIO
 from PIL import Image, ImageOps
 from pathlib import Path
 
-PROFILE_PICS_DIR = Path("media/profile-pics")
+PROFILE_PICS_DIR = Path("media/profile_pics")
 
 
 ## Process Image Function

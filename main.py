@@ -8,11 +8,12 @@ from fastapi.templating import Jinja2Templates
 from fastapi.staticfiles import StaticFiles
 from starlette.exceptions import HTTPException as StarletteHttpException
 from schemas import PostCreate, PostResponse, UserCreate, PostCreate, PostUpdate, UserUpdate
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import Annotated
 import model
+from config import settings
 from routers import posts, users
 from database import Base, engine, get_db
 
@@ -60,12 +61,18 @@ app.include_router(posts.router, prefix="/api/posts", tags=["posts"])
 @app.get("/", include_in_schema=False, name="home")
 @app.get("/posts", include_in_schema=False, name="posts")
 async def home(request: Request, db: Annotated[AsyncSession, Depends(get_db)]):
-    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)).order_by(model.Post.date_posted.desc()))
+
+    count_result = await db.execute(select(func.count()).select_from(model.Post))
+    total =count_result.scalar() or 0
+    
+    result = await db.execute(select(model.Post).options(selectinload(model.Post.author)).order_by(model.Post.date_posted.desc()).limit(settings.post_per_page))
     posts = result.scalars().all()
+
+    has_more = len(posts) < total
     return templates.TemplateResponse(
         request,
         "home.html",
-        {"posts": posts, "title": "Home"},
+        {"posts": posts, "title": "Home", "limit": settings.post_per_page, "has_more": has_more},
     )
 
 @app.get("/posts/{post_id}", include_in_schema=False)

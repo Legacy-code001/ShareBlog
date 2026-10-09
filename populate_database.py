@@ -5,7 +5,7 @@ from pathlib import Path
 import httpx
 from sqlalchemy import delete, select, update
 
-import models
+import model
 from database import AsyncSessionLocal, engine
 from image_utils import PROFILE_PICS_DIR
 from main import app
@@ -243,8 +243,8 @@ async def clear_existing_data() -> None:
 
     # Clear database tables (order respects foreign keys)
     async with AsyncSessionLocal() as db:
-        await db.execute(delete(models.Post))
-        await db.execute(delete(models.User))
+        await db.execute(delete(model.Post))
+        await db.execute(delete(model.User))
         await db.commit()
     print("Cleared existing data")
 
@@ -253,7 +253,7 @@ async def update_post_dates() -> None:
     now = datetime.now(UTC)
 
     async with AsyncSessionLocal() as db:
-        result = await db.execute(select(models.Post).order_by(models.Post.id))
+        result = await db.execute(select(model.Post).order_by(model.Post.id))
         posts = result.scalars().all()
 
         if not posts:
@@ -261,8 +261,8 @@ async def update_post_dates() -> None:
 
         # First post (POST_44) is the oldest - ~90 days ago
         await db.execute(
-            update(models.Post)
-            .where(models.Post.id == posts[0].id)
+            update(model.Post)
+            .where(model.Post.id == posts[0].id)
             .values(date_posted=now - timedelta(days=90)),
         )
 
@@ -272,8 +272,8 @@ async def update_post_dates() -> None:
             hours_offset = (i * 7) % 24
             post_date = now - timedelta(days=days_ago, hours=hours_offset)
             await db.execute(
-                update(models.Post)
-                .where(models.Post.id == post.id)
+                update(model.Post)
+                .where(model.Post.id == post.id)
                 .values(date_posted=post_date),
             )
 
