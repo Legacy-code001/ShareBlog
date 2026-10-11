@@ -17,6 +17,16 @@ class Settings(BaseSettings):
 
     post_per_page: int = 10
 
+    reset_token_expire_minutes: int = 60
+
+    maul_server: str = "localhost"
+    mail_port : int = 587
+    mail_username: str = ""
+    mail_password: SecretStr = SecretStr("") 
+    mail_from: str = "noreplay@example.com"
+    mail_use_tls: bool = true
+    frontend_url: str = "http://localhost:8000"
+
+
 
 settings = Settings() #load from .env file
-    

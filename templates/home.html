@@ -29,16 +29,16 @@
             <button type="button" class="btn btn-outline-primary" id="loadMoreBtn">Load More Posts</button>
         </div>
     {% endif %}
-{%endblock content %}
+{% endblock content %}
 {% block scripts %}
     <script type="module">
         import { escapeHtml, formatDate } from '/static/js/utils.js';
         // Pagination state - initialized from server-rendered value
-        let currentOffSet = {{limit}} //start after server rendered post
-        const limit = {{limit}}
-        let hasMore = {{"true" if has_more else "false"}}
+        let currentOffset = {{ limit }};  // Start after server-rendered posts
+        const limit = {{ limit }};
+        let hasMore = {{ 'true' if has_more else 'false' }};
 
-        const postContainer = document.getElementById("postContainer")
+        const postsContainer = document.getElementById("postsContainer")
         const loadMoreBtn = document.getElementById("loadMoreBtn")
 
         // Create HTML for a single post (matching server-rendered structure)
@@ -63,19 +63,23 @@
         }
 
         async function loadMorePosts() {
-            loadMoreBtn = disabled
+            loadMoreBtn.disabled = true
             loadMoreBtn.textContent = "loading..."
 
             let errorOccured = false
 
             try {
+                console.log("let get started")
                 const response = await fetch(`/api/posts?skip=${currentOffset}&limit=${limit}`)
 
+                if (!response.ok) {
+                    throw new Error('Failed to fetch posts');
+                }
                 const data = await response.json()
 
                 //await new post to the container
                 for (const post of data.posts){
-                    postContainer.insertAdjacentElement('beforeend', createPostHTML(post))
+                    postsContainer.insertAdjacentHTML('beforeend', createPostHTML(post))
                 }
                 // Update pagination state
                 currentOffset += data.posts.length
@@ -86,14 +90,14 @@
                 }
 
             } catch (error) {
-                errorOccurred = true;
+                errorOccured = true;
                 console.error('Error loading posts:', error);
                 // Show error message and keep button enabled for retry
                 loadMoreBtn.textContent = 'Error - Click to Retry';
                 loadMoreBtn.disabled = false;
             }finally {
             // Re-enable button and reset text only if no error occurred
-                if (!errorOccurred && hasMore) {
+                if (!errorOccured && hasMore) {
                     loadMoreBtn.disabled = false;
                     loadMoreBtn.textContent = 'Load More Posts';
                 }
