@@ -54,6 +54,12 @@ def verify_access_token(token: str) -> str | None:
     else:
         return payload.get("sub")
 
+async generate_reset_token() -> str:
+    return secrete.token_urlsafe(32)
+
+async hash_token_reset(str) -> str:
+    return hashlib.sha256(token.encode()).hexdigest()
+
 async def get_current_token(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_db)]) -> model.User:
     user_id = verify_access_token(token)
     if user_id is None:
@@ -83,4 +89,3 @@ async def get_current_token(token: Annotated[str, Depends(oauth2_scheme)], db: A
     return user
 
 CurrentUser = Annotated[model.User, Depends(get_current_token)]
-

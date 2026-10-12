@@ -23,6 +23,8 @@ class User(Base):
 
     posts: Mapped[list[Post]] = relationship(back_populates="author", cascade="all, delete-orphan")
 
+    reset_token: Mapped[list[PasswordResetToken]] = relationship(back_populates="user", cascade="all, delete-orphan")
+
 
     #he @property decorator turns the image_path method into a read-only attribute,
     @property
@@ -49,3 +51,21 @@ class Post(Base):
     )
 
     author: Mapped[User] = relationship(back_populates="posts")
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_rest_token"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey=('user_id', nullable=False))
+    token: Mapped[str] = mapped_column(String(64), unique=True, nullable=False)
+    expired_at: Mapped[database] = mapped_column(
+        DateTime(timezone=True)
+        nullable=False
+
+    )
+    created_at: Mapped[database] = mapped_column(
+        DateTime(timezone=True)
+        default= lambda: datetime.now(UTC)
+    )
+
+    user: Mapped[user] = relationship(back_populates="reset_token")
