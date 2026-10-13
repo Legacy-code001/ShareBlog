@@ -50,7 +50,6 @@ USERS = [
         "image": "user_1.png",
     },
 ]
-
 POSTS = [
     {
         "title": "Why I Love FastAPI",
@@ -243,6 +242,7 @@ async def clear_existing_data() -> None:
 
     # Clear database tables (order respects foreign keys)
     async with AsyncSessionLocal() as db:
+        await db.execute(delete(model.PasswordResetToken))
         await db.execute(delete(model.Post))
         await db.execute(delete(model.User))
         await db.commit()
@@ -381,3 +381,8 @@ async def populate() -> None:
 
 if __name__ == "__main__":
     asyncio.run(populate())
+    asyncio.run(populate())
+
+
+
+

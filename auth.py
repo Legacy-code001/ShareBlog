@@ -1,6 +1,8 @@
 from datetime import UTC, datetime, timedelta
 import jwt
+import secrets
 from config import settings
+import hashlib
 from fastapi.security import OAuth2PasswordBearer
 from pwdlib import PasswordHash
 from fastapi import HTTPException, status, Depends
@@ -54,10 +56,10 @@ def verify_access_token(token: str) -> str | None:
     else:
         return payload.get("sub")
 
-async generate_reset_token() -> str:
-    return secrete.token_urlsafe(32)
+def generate_reset_token() -> str:
+    return secrets.token_urlsafe(32)
 
-async hash_token_reset(str) -> str:
+def hash_token_reset(token: str) -> str:
     return hashlib.sha256(token.encode()).hexdigest()
 
 async def get_current_token(token: Annotated[str, Depends(oauth2_scheme)], db: Annotated[AsyncSession, Depends(get_db)]) -> model.User:

@@ -19,12 +19,12 @@ class Settings(BaseSettings):
 
     reset_token_expire_minutes: int = 60
 
-    maul_server: str = "localhost"
+    mail_server: str = "localhost"
     mail_port : int = 587
     mail_username: str = ""
     mail_password: SecretStr = SecretStr("") 
     mail_from: str = "noreplay@example.com"
-    mail_use_tls: bool = true
+    mail_use_tls: bool = True
     frontend_url: str = "http://localhost:8000"
 
 
