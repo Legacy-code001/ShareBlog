@@ -22,9 +22,10 @@ from database import Base, engine, get_db
 # Creates every table registered under this specific Base
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+    # async with engine.begin() as conn:
+    #     await conn.run_sync(Base.metadata.create_all)
     yield
+    
     await engine.dispose()
 
 # Base.metadata.create_all(bind=engine) 
@@ -140,6 +141,26 @@ async def account_page(request: Request):
         {"title": "Account"}
 
     )
+
+
+@app.get("/forget-password", include_in_schema=False)
+async def forgot_password_page(request: Request):
+    return templates.TemplateResponse(
+        request,
+        "forgot_password.html",
+        {"title": "Forget Password"}
+    )
+
+@app.get("/reset-password", include_in_schema=False)
+async def reset_password_page(request: Request):
+    response = templates.TemplateResponse(
+        request,
+        "reset_password.html",
+        {"title": "Reset Password"}
+    )
+    response.headers["Referrer-Policy"] = "no referrer"
+    return response
+
 
 
 ## StarletteHTTPException Handler

@@ -93,7 +93,7 @@ async def get_current_user(
 
 
 
-@router.post("/forget_password", status_code=status.HTTP_202_ACCEPTED)
+@router.post("/forget-password", status_code=status.HTTP_202_ACCEPTED)
 async def forget_password(request_data:ForgetPasswordRequest, background_task:BackgroundTasks, db: Annotated[AsyncSession, Depends(get_db)]):
     result = await db.execute(select(model.User).where(func.lower(model.User.email) == request_data.email.lower()))
 
@@ -128,7 +128,7 @@ async def forget_password(request_data:ForgetPasswordRequest, background_task:Ba
             "message": "If an account exists with this email, you will receive password reset instructions.",
         }
 
-@router.post("/reset_password", status_code=status.HTTP_200_OK)
+@router.post("/reset-password", status_code=status.HTTP_200_OK)
 async def reset_password(request_data: ResetPasswordRequest, db: Annotated[AsyncSession, Depends(get_db)]):
     token_hash = hash_token_reset(request_data.token)
     result = await db.execute(select(model.PasswordResetToken).where(model.PasswordResetToken.token_hash == token_hash))
@@ -144,7 +144,7 @@ async def reset_password(request_data: ResetPasswordRequest, db: Annotated[Async
     if reset_token.expired_at.replace(tzinfo=UTC) < datetime.now(UTC):
         await db.delete(reset_token)
         await db.commit()
-        raise HTTP_400_BAD_REQUEST(
+        raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="nvalid or expired reset"
         )
@@ -169,10 +169,10 @@ async def reset_password(request_data: ResetPasswordRequest, db: Annotated[Async
         "message": "Password reset successfully. You can now log in with your new password.",
     }
 
-@router.post("me/password", status_code=status.HTTP_200_OK)
+@router.patch("/me/password", status_code=status.HTTP_200_OK)
 async def changePassword(password_data: ChangePasswordRequest, current_user: CurrentUser, db: Annotated[AsyncSession, Depends(get_db)]):
 
-    if not verify_password(password_data.current_password, hash_password(current_user.password_hash)):
+    if not verify_password(password_data.current_password, current_user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Current password is incorrect"
@@ -180,8 +180,11 @@ async def changePassword(password_data: ChangePasswordRequest, current_user: Cur
 
     current_user.password_hash = hash_password(password_data.new_password)
 
-    await db.execute(sql_delete(model.PasswordResetToken).where(model.PasswordResetToken.user_id == user.id))
+    await db.execute(sql_delete(model.PasswordResetToken).where(model.PasswordResetToken.user_id == current_user.id))
     await db.commit()
+
+   
+
 
     return {"message": "Password changed successfully"}
 
