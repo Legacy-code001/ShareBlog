@@ -141,7 +141,8 @@ async def reset_password(request_data: ResetPasswordRequest, db: Annotated[Async
             detail="nvalid or expired reset "
         )
 
-    if reset_token.expired_at.replace(tzinfo=UTC) < datetime.now(UTC):
+    #this method ( .replace(tzinfo=UTC) ) is used on expired at sqlachemy did not captures the time zone info
+    if reset_token.expired_at < datetime.now(UTC):
         await db.delete(reset_token)
         await db.commit()
         raise HTTPException(
@@ -308,7 +309,7 @@ async def delete_user(user_id: int, current_user: CurrentUser, db: Annotated[Asy
     await db.commit()
 
     if old_filename:
-        delte_profile_image(old_filename)
+        delete_profile_image(old_filename)
 
 @router.patch("/{user_id}/picture", response_model=UserPrivate)
 async def upload_profile_picture(user_id: int, current_user: CurrentUser, file: UploadFile, db: Annotated[AsyncSession, Depends(get_db)]):
