@@ -28,6 +28,13 @@ class Settings(BaseSettings):
     mail_use_tls: bool = True
     frontend_url: str = "http://localhost:8000"
 
+    #S3 configuration
+    S3_bucket_name: str
+    S3_region: str = "eu-north-1"
+    S3_access_key_id: str | None = None
+    S3_security_access_key: str | None = None
+    S3_endpoint_url: str | None = None
+
 
 
 settings = Settings() #load from .env file
