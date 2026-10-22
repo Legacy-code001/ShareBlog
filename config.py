@@ -14,6 +14,13 @@ class Settings(BaseSettings):
     algorithm: str = "HS256"
     access_token_expire_minutes: int = 30
 
+    #S3 configuration
+    s3_bucket_name: str
+    s3_region: str = "eu-north-1"
+    s3_access_key_id: SecretStr | None = None
+    s3_secret_access_key: SecretStr | None = None
+    s3_endpoint_url: str | None = None
+
     max_upload_size_bytes: int = 5 * 1024 * 1024
 
     post_per_page: int = 10
@@ -29,11 +36,11 @@ class Settings(BaseSettings):
     frontend_url: str = "http://localhost:8000"
 
     #S3 configuration
-    S3_bucket_name: str
-    S3_region: str = "eu-north-1"
-    S3_access_key_id: str | None = None
-    S3_security_access_key: str | None = None
-    S3_endpoint_url: str | None = None
+    s3_bucket_name: str
+    s3_region: str = "af-south-1"
+    s3_access_key_id: SecretStr | None = None
+    s3_security_access_key: SecretStr | None = None
+    s3_endpoint_url: str | None = None
 
 
 
