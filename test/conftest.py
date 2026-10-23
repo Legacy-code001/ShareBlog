@@ -104,7 +104,7 @@ async def create_test_user(
         username: str = "testname",
         email: str = "test@email.com",
         password: str = "testpassword"
-):
+) -> dict:
      response = await client.post(
           "/api/users",
           json={
@@ -116,7 +116,7 @@ async def create_test_user(
      assert response.status_code == 201, f"Failed to create user: {response.text}"
      return response.json()
 
-async def login_user():
+async def login_user() -> str:
      pass
      
 
