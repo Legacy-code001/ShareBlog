@@ -99,5 +99,24 @@ async def client(
 
     app.dependency_overrides.clear()
 
+async def create_test_user(
+        client: AsyncClient,
+        username: str = "testname",
+        email: str = "test@email.com",
+        password: str = "testpassword"
+):
+     response = await client.post(
+          "/api/users",
+          json={
+              "username": username,
+              "email": email,
+              "password": password
+          }
+     )
+     assert response.status_code == 201, f"Failed to create user: {response.text}"
+     return response.json()
 
+async def login_user():
+     pass
+     
 
